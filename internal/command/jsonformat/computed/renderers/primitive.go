@@ -74,6 +74,14 @@ func renderPrimitiveValue(value interface{}, t cty.Type, opts computed.RenderHum
 	}
 }
 
+// multilineContextLines is the number of unchanged lines kept on each side of
+// a change in a multiline string diff. multilineMinHiddenLines stops a summary
+// line from replacing a run that is barely longer than the summary itself.
+const (
+	multilineContextLines   = 3
+	multilineMinHiddenLines = 2
+)
+
 func (renderer primitiveRenderer) renderStringDiff(diff computed.Diff, indent int, opts computed.RenderHumanOpts) string {
 
 	// We process multiline strings at the end of the switch statement.
@@ -156,30 +164,65 @@ func (renderer primitiveRenderer) renderStringDiff(diff computed.Diff, indent in
 		beforeLines := strings.Split(beforeString.String, "\n")
 		afterLines := strings.Split(afterString.String, "\n")
 
+		// Unchanged lines are buffered so that long runs of them can be
+		// collapsed into a summary, keeping a few lines of context around
+		// each change like a unified diff does.
+		var unchangedLines []string
+		emitUnchanged := func(keepLeading, keepTrailing bool) {
+			leading, trailing := 0, 0
+			if keepLeading {
+				leading = multilineContextLines
+			}
+			if keepTrailing {
+				trailing = multilineContextLines
+			}
+			hidden := len(unchangedLines) - leading - trailing
+			if opts.ShowUnchangedChildren || hidden < multilineMinHiddenLines {
+				lines = append(lines, unchangedLines...)
+			} else {
+				lines = append(lines, unchangedLines[:leading]...)
+				lines = append(lines, fmt.Sprintf("%s%s%s", formatIndent(indent+1), writeDiffActionSymbol(plans.NoOp, opts), unchanged("line", hidden, opts)))
+				lines = append(lines, unchangedLines[len(unchangedLines)-trailing:]...)
+			}
+			unchangedLines = nil
+		}
+		emitChanged := func(action plans.Action, line string) {
+			if len(unchangedLines) > 0 {
+				// A run before the first change only needs trailing context.
+				emitUnchanged(len(lines) > 0, true)
+			}
+			lines = append(lines, fmt.Sprintf("%s%s%s", formatIndent(indent+1), writeDiffActionSymbol(action, opts), line))
+		}
+
 		processIndices := func(beforeIx, afterIx int) {
 			if beforeIx < 0 || beforeIx >= len(beforeLines) {
-				lines = append(lines, fmt.Sprintf("%s%s%s", formatIndent(indent+1), writeDiffActionSymbol(plans.Create, opts), afterLines[afterIx]))
+				emitChanged(plans.Create, afterLines[afterIx])
 				return
 			}
 
 			if afterIx < 0 || afterIx >= len(afterLines) {
-				lines = append(lines, fmt.Sprintf("%s%s%s", formatIndent(indent+1), writeDiffActionSymbol(plans.Delete, opts), beforeLines[beforeIx]))
+				emitChanged(plans.Delete, beforeLines[beforeIx])
 				return
 			}
 
 			if beforeLines[beforeIx] != afterLines[afterIx] {
-				lines = append(lines, fmt.Sprintf("%s%s%s", formatIndent(indent+1), writeDiffActionSymbol(plans.Delete, opts), beforeLines[beforeIx]))
-				lines = append(lines, fmt.Sprintf("%s%s%s", formatIndent(indent+1), writeDiffActionSymbol(plans.Create, opts), afterLines[afterIx]))
+				emitChanged(plans.Delete, beforeLines[beforeIx])
+				emitChanged(plans.Create, afterLines[afterIx])
 				return
 			}
 
-			lines = append(lines, fmt.Sprintf("%s%s%s", formatIndent(indent+1), writeDiffActionSymbol(plans.NoOp, opts), beforeLines[beforeIx]))
+			unchangedLines = append(unchangedLines, fmt.Sprintf("%s%s%s", formatIndent(indent+1), writeDiffActionSymbol(plans.NoOp, opts), beforeLines[beforeIx]))
 		}
 		isObjType := func(_ string) bool {
 			return false
 		}
 
 		collections.ProcessSlice(beforeLines, afterLines, processIndices, isObjType)
+		if len(unchangedLines) > 0 {
+			// A run after the last change only needs leading context. If the
+			// strings are identical there is no change at all, so show them.
+			emitUnchanged(true, len(lines) == 0)
+		}
 	}
 
 	// We return early if we find non-multiline strings or JSON strings, so we
