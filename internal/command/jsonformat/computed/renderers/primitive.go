@@ -177,7 +177,7 @@ func (renderer primitiveRenderer) renderStringDiff(diff computed.Diff, indent in
 				trailing = multilineContextLines
 			}
 			hidden := len(unchangedLines) - leading - trailing
-			if opts.ShowUnchangedChildren || hidden < multilineMinHiddenLines {
+			if !opts.CollapseUnchangedLines || opts.ShowUnchangedChildren || hidden < multilineMinHiddenLines {
 				lines = append(lines, unchangedLines...)
 			} else {
 				lines = append(lines, unchangedLines[:leading]...)

@@ -25,6 +25,7 @@ type View struct {
 	colorize *colorstring.Colorize
 
 	compactWarnings bool
+	conciseDiff     bool
 
 	// When this is true it's a hint that Terraform is being run indirectly
 	// via a wrapper script or other automation and so we may wish to replace
@@ -74,6 +75,7 @@ func (v *View) RunningInAutomation() bool {
 func (v *View) Configure(view *arguments.View) {
 	v.colorize.Disable = view.NoColor
 	v.compactWarnings = view.CompactWarnings
+	v.conciseDiff = view.ConciseDiff
 }
 
 // SetConfigSources overrides the default no-op callback with a new function

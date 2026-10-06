@@ -352,6 +352,10 @@ Options:
                          accompanied by errors, show them in a more compact
                          form that includes only the summary messages.
 
+  -concise-diff          Hide long runs of unchanged lines in multi-line
+                         string values, keeping three lines of context
+                         around each change.
+
   -destroy               Destroy Terraform-managed infrastructure.
                          The command "terraform destroy" is a convenience alias
                          for this option.
