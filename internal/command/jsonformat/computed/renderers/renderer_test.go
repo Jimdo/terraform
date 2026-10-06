@@ -250,6 +250,7 @@ null -> jsonencode(
 					cty.String),
 				Action: plans.Update,
 			},
+			opts: computed.RenderHumanOpts{CollapseUnchangedLines: true},
 			expected: `
 <<-EOT
         # (4 unchanged lines hidden)
@@ -270,6 +271,7 @@ null -> jsonencode(
 				Renderer: Primitive("a\nb\nc\nd\nold\ne\nf\ng\nh", "a\nb\nc\nd\nnew\ne\nf\ng\nh", cty.String),
 				Action:   plans.Update,
 			},
+			opts: computed.RenderHumanOpts{CollapseUnchangedLines: true},
 			expected: `
 <<-EOT
         a
@@ -285,12 +287,11 @@ null -> jsonencode(
     EOT
 `,
 		},
-		"primitive_multiline_string_update_shows_unchanged_lines_when_requested": {
+		"primitive_multiline_string_update_shows_all_lines_by_default": {
 			diff: computed.Diff{
 				Renderer: Primitive("a\nb\nc\nd\ne\nf\nold", "a\nb\nc\nd\ne\nf\nnew", cty.String),
 				Action:   plans.Update,
 			},
-			opts: computed.RenderHumanOpts{ShowUnchangedChildren: true},
 			expected: `
 <<-EOT
         a

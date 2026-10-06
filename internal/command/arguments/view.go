@@ -13,6 +13,10 @@ type View struct {
 	// level of noise when multiple instances of the same warning are raised
 	// for a configuration.
 	CompactWarnings bool
+
+	// ConciseDiff collapses long runs of unchanged lines inside multi-line
+	// string diffs, keeping a few lines of context around each change.
+	ConciseDiff bool
 }
 
 // ParseView processes CLI arguments, returning a View value and a
@@ -30,6 +34,8 @@ func ParseView(args []string) (*View, []string) {
 			common.NoColor = true
 		case "-compact-warnings":
 			common.CompactWarnings = true
+		case "-concise-diff":
+			common.ConciseDiff = true
 		default:
 			// Unsupported argument: move left to the current position, and
 			// increment the index.

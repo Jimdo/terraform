@@ -55,6 +55,7 @@ func (v *ShowHuman) DisplayResourceInstanceState(state jsonformat.State, diags t
 		Streams:             v.view.streams,
 		Colorize:            v.view.colorize,
 		RunningInAutomation: v.view.runningInAutomation,
+		ConciseDiff:         v.view.conciseDiff,
 	}
 
 	if diags.HasErrors() {
@@ -71,6 +72,7 @@ func (v *ShowHuman) Display(config *configs.Config, plan *plans.Plan, planJSON *
 		Colorize:            v.view.colorize,
 		Streams:             v.view.streams,
 		RunningInAutomation: v.view.runningInAutomation,
+		ConciseDiff:         v.view.conciseDiff,
 	}
 
 	// Prefer to display a pre-built JSON plan, if we got one; then, fall back

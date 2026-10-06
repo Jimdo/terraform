@@ -106,6 +106,7 @@ func (v *OperationHuman) Plan(plan *plans.Plan, schemas *terraform.Schemas) {
 		Colorize:            v.view.colorize,
 		Streams:             v.view.streams,
 		RunningInAutomation: v.inAutomation,
+		ConciseDiff:         v.view.conciseDiff,
 	}
 
 	jplan := jsonformat.Plan{

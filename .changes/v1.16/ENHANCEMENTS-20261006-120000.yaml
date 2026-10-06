@@ -1,0 +1,5 @@
+kind: ENHANCEMENTS
+body: 'cli: the new global `-concise-diff` option hides long runs of unchanged lines in multi-line string diffs for `plan`, `apply`, `show` and `test`, keeping three lines of context around each change'
+time: 2026-10-06T12:00:00.000000+02:00
+custom:
+    Issue: "32418"
