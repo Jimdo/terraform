@@ -1,0 +1,95 @@
+# Jimdo-only workflow: builds the patched Terraform CLI from the ref this
+# workflow is dispatched on and publishes it as a GitHub release on this fork.
+name: jimdo-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version without "v" prefix, e.g. 1.16.3-jimdo.1'
+        type: string
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - { goos: linux, goarch: amd64 }
+          - { goos: linux, goarch: arm64 }
+          - { goos: darwin, goarch: arm64 }
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Determine Go version
+        id: go
+        uses: ./.github/actions/go-version
+
+      - name: Install Go toolchain
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: ${{ steps.go.outputs.version }}
+          cache-dependency-path: go.sum
+
+      - name: Build
+        env:
+          VERSION: ${{ inputs.version }}
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: |
+          set -euo pipefail
+          # version.go derives Version and Prerelease from the embedded VERSION
+          # file, so the full release version must be written there (same as
+          # upstream's release branches do) and dev must be switched off.
+          echo "$VERSION" > version/VERSION
+          go build -ldflags "-w -s -X 'github.com/hashicorp/terraform/version.dev=no'" \
+            -trimpath -buildvcs=false -o "out/terraform" .
+          git checkout -- version/VERSION
+          if [ "$GOOS" = "linux" ] && [ "$GOARCH" = "amd64" ]; then
+            out/terraform version | grep -F "Terraform v${VERSION}"
+          fi
+          (cd out && zip -q "../terraform_${VERSION}_${GOOS}_${GOARCH}.zip" terraform)
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: terraform_${{ inputs.version }}_${{ matrix.goos }}_${{ matrix.goarch }}
+          path: terraform_${{ inputs.version }}_${{ matrix.goos }}_${{ matrix.goarch }}.zip
+          if-no-files-found: error
+
+  release:
+    name: Create release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create checksums
+        working-directory: dist
+        run: sha256sum terraform_*.zip > "terraform_${{ inputs.version }}_SHA256SUMS"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          cat > notes.md <<NOTES
+          Jimdo build of upstream Terraform v1.16.3 plus the \`-concise-diff\` patch, which hides long runs of unchanged lines in multi-line string diffs of \`terraform plan\`.
+
+          Source: https://github.com/Jimdo/terraform/tree/${GITHUB_REF_NAME} (commit ${GITHUB_SHA})
+          NOTES
+          gh release create "v${VERSION}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "v${VERSION}" \
+            --notes-file notes.md \
+            dist/terraform_*.zip "dist/terraform_${VERSION}_SHA256SUMS"
