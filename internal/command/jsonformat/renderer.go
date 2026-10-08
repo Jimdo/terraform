@@ -124,6 +124,16 @@ type Renderer struct {
 	Colorize *colorstring.Colorize
 
 	RunningInAutomation bool
+
+	// ConciseDiff collapses long runs of unchanged lines in multi-line string
+	// diffs.
+	ConciseDiff bool
+}
+
+func (renderer Renderer) renderHumanOpts() computed.RenderHumanOpts {
+	opts := computed.NewRenderHumanOpts(renderer.Colorize)
+	opts.CollapseUnchangedLines = renderer.ConciseDiff
+	return opts
 }
 
 func (renderer Renderer) RenderHumanPlan(plan Plan, mode plans.Mode, opts ...plans.Quality) {
@@ -148,7 +158,7 @@ func (renderer Renderer) RenderHumanState(state State) {
 		return
 	}
 
-	opts := computed.NewRenderHumanOpts(renderer.Colorize)
+	opts := renderer.renderHumanOpts()
 	opts.ShowUnchangedChildren = true
 	opts.HideDiffActionSymbols = true
 
@@ -198,7 +208,7 @@ func (renderer Renderer) RenderLog(log *JSONLog) error {
 					return err
 				}
 
-				opts := computed.NewRenderHumanOpts(renderer.Colorize)
+				opts := renderer.renderHumanOpts()
 				opts.ShowUnchangedChildren = true
 
 				outputDiff := differ.ComputeDiffForType(change, ctype)

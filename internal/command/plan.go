@@ -252,6 +252,10 @@ Other Options:
                              accompanied by errors, shows them in a more compact
                              form that includes only the summary messages.
 
+  -concise-diff              Hide long runs of unchanged lines in multi-line
+                             string values, keeping three lines of context
+                             around each change.
+
   -detailed-exitcode         Return detailed exit codes when the command exits.
                              This will change the meaning of exit codes to:
                              0 - Succeeded, diff is empty (no changes)

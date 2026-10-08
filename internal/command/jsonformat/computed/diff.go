@@ -102,6 +102,10 @@ type RenderHumanOpts struct {
 	// HideDiffActionSymbols tells the renderer not to show the '+'/'-' symbols
 	// and to skip the places where the symbols would result in an offset.
 	HideDiffActionSymbols bool
+
+	// CollapseUnchangedLines hides long runs of unchanged lines in multi-line
+	// string diffs, keeping a few lines of context around each change.
+	CollapseUnchangedLines bool
 }
 
 // NewRenderHumanOpts creates a new RenderHumanOpts struct with the required
@@ -118,9 +122,10 @@ func (opts RenderHumanOpts) Clone() RenderHumanOpts {
 	return RenderHumanOpts{
 		Colorize: opts.Colorize,
 
-		OverrideNullSuffix:    opts.OverrideNullSuffix,
-		ShowUnchangedChildren: opts.ShowUnchangedChildren,
-		HideDiffActionSymbols: opts.HideDiffActionSymbols,
+		OverrideNullSuffix:     opts.OverrideNullSuffix,
+		ShowUnchangedChildren:  opts.ShowUnchangedChildren,
+		HideDiffActionSymbols:  opts.HideDiffActionSymbols,
+		CollapseUnchangedLines: opts.CollapseUnchangedLines,
 
 		// ForceForcesReplacement and ForbidForcesReplacement are special cases
 		// in that they don't cascade. So each diff should decide independently

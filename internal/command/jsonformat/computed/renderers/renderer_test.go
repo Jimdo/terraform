@@ -242,6 +242,69 @@ null -> jsonencode(
     EOT
 `,
 		},
+		"primitive_multiline_string_update_hides_unchanged_lines": {
+			diff: computed.Diff{
+				Renderer: Primitive(
+					"a\nb\nc\nd\ne\nf\ng\nold\nh\ni\nj\nk\nl\nm\nn\no\np",
+					"a\nb\nc\nd\ne\nf\ng\nnew\nh\ni\nj\nk\nl\nm\nn\no\np",
+					cty.String),
+				Action: plans.Update,
+			},
+			opts: computed.RenderHumanOpts{CollapseUnchangedLines: true},
+			expected: `
+<<-EOT
+        # (4 unchanged lines hidden)
+        e
+        f
+        g
+      - old
+      + new
+        h
+        i
+        j
+        # (6 unchanged lines hidden)
+    EOT
+`,
+		},
+		"primitive_multiline_string_update_keeps_short_runs": {
+			diff: computed.Diff{
+				Renderer: Primitive("a\nb\nc\nd\nold\ne\nf\ng\nh", "a\nb\nc\nd\nnew\ne\nf\ng\nh", cty.String),
+				Action:   plans.Update,
+			},
+			opts: computed.RenderHumanOpts{CollapseUnchangedLines: true},
+			expected: `
+<<-EOT
+        a
+        b
+        c
+        d
+      - old
+      + new
+        e
+        f
+        g
+        h
+    EOT
+`,
+		},
+		"primitive_multiline_string_update_shows_all_lines_by_default": {
+			diff: computed.Diff{
+				Renderer: Primitive("a\nb\nc\nd\ne\nf\nold", "a\nb\nc\nd\ne\nf\nnew", cty.String),
+				Action:   plans.Update,
+			},
+			expected: `
+<<-EOT
+        a
+        b
+        c
+        d
+        e
+        f
+      - old
+      + new
+    EOT
+`,
+		},
 		"primitive_json_string_create": {
 			diff: computed.Diff{
 				Renderer: Primitive(nil, "{\"key_one\": \"value_one\",\"key_two\":\"value_two\"}", cty.String),

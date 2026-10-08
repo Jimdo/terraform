@@ -114,6 +114,9 @@ Usage: terraform [global options] show [options] [path]
 Options:
 
   -no-color           If specified, output won't contain any color.
+  -concise-diff       Hide long runs of unchanged lines in multi-line
+                      string values, keeping three lines of context
+                      around each change.
   -json               If specified, output the Terraform plan or state in
                       a machine-readable form.
 

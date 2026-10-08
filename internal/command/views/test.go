@@ -187,6 +187,7 @@ func (t *TestHuman) Run(run *moduletest.Run, file *moduletest.File, progress mod
 			Streams:             t.view.streams,
 			Colorize:            t.view.colorize,
 			RunningInAutomation: t.view.runningInAutomation,
+			ConciseDiff:         t.view.conciseDiff,
 		}
 
 		if run.Config.Command == configs.ApplyTestCommand {

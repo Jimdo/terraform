@@ -305,7 +305,7 @@ func renderHumanDiffOutputs(renderer Renderer, outputs map[string]computed.Diff)
 	for _, key := range keys {
 		output := outputs[key]
 		if output.Action != plans.NoOp {
-			rendered = append(rendered, fmt.Sprintf("%s %-*s = %s", renderer.Colorize.Color(format.DiffActionSymbol(output.Action)), escapedKeyMaxLen, escapedKeys[key], output.RenderHuman(0, computed.NewRenderHumanOpts(renderer.Colorize))))
+			rendered = append(rendered, fmt.Sprintf("%s %-*s = %s", renderer.Colorize.Color(format.DiffActionSymbol(output.Action)), escapedKeyMaxLen, escapedKeys[key], output.RenderHuman(0, renderer.renderHumanOpts())))
 		}
 	}
 	return strings.Join(rendered, "\n")
@@ -405,7 +405,7 @@ func renderHumanDiff(renderer Renderer, diff diff, cause string) (string, bool) 
 	var buf bytes.Buffer
 	buf.WriteString(renderer.Colorize.Color(resourceChangeComment(diff.change, action, cause)))
 
-	opts := computed.NewRenderHumanOpts(renderer.Colorize)
+	opts := renderer.renderHumanOpts()
 	opts.ShowUnchangedChildren = diff.Importing()
 
 	buf.WriteString(fmt.Sprintf("%s %s %s", renderer.Colorize.Color(format.DiffActionSymbol(action)), resourceChangeHeader(diff.change), diff.diff.RenderHuman(0, opts)))
@@ -434,7 +434,7 @@ func renderActionInvocation(renderer Renderer, ai actionInvocation) string {
 	if len(ai.invocation.ConfigValues) > 0 {
 		buf.WriteString("        config ")
 
-		opts := computed.NewRenderHumanOpts(renderer.Colorize)
+		opts := renderer.renderHumanOpts()
 		opts.ShowUnchangedChildren = true
 		opts.HideDiffActionSymbols = true
 		change := structured.FromJsonActionInvocation(ai.invocation)
@@ -504,7 +504,7 @@ func renderHumanDeferredDiff(renderer Renderer, deferred deferredDiff) (string, 
 	buf.WriteString(renderer.Colorize.Color(fmt.Sprintf("[bold]  # %s[reset] was deferred\n", deferred.diff.change.Address)))
 	buf.WriteString(renderer.Colorize.Color(fmt.Sprintf("  #[reset] (%s)\n", explanation)))
 
-	opts := computed.NewRenderHumanOpts(renderer.Colorize)
+	opts := renderer.renderHumanOpts()
 	opts.ShowUnchangedChildren = deferred.diff.Importing()
 
 	buf.WriteString(fmt.Sprintf("%s %s %s", renderer.Colorize.Color(format.DiffActionSymbol(action)), resourceChangeHeader(deferred.diff.change), deferred.diff.diff.RenderHuman(0, opts)))
